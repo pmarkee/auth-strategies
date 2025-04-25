@@ -1,0 +1,14 @@
+services:
+  database:
+    image: 'postgres:alpine'
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: example
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: auth-strategies
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+
+volumes:
+  db-volume:
