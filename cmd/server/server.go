@@ -2,9 +2,12 @@ package main
 
 import (
 	"auth-strategies/internal/config"
+	"auth-strategies/internal/db"
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/rs/zerolog/log"
 	slogchi "github.com/samber/slog-chi"
 	"log/slog"
 	"net/http"
@@ -28,10 +31,17 @@ func main() {
 
 	cfg := config.ParseConfig()
 
+	_, err := db.Connect(context.Background(), &cfg.Db)
+	if err != nil {
+		log.Error().Err(err).Msg("database connection failed")
+		return
+	}
+	log.Info().Msg("database connection established")
+
 	r := SetupRouter()
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
 	})
-	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), r)
+	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), r)
 }

@@ -7,7 +7,20 @@ import (
 )
 
 type Config struct {
+	Server ServerConfig `yaml:"server"`
+	Db     DbConfig     `yaml:"db"`
+}
+
+type ServerConfig struct {
 	Port int `yaml:"port"`
+}
+
+type DbConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Name     string `yaml:"name"`
 }
 
 func ParseConfig() Config {
@@ -21,6 +34,6 @@ func ParseConfig() Config {
 		log.Fatal().Err(err).Msg("failed to unmarshal config.yaml")
 	}
 
-	log.Info().Int("port", cfg.Port).Msg("")
+	log.Info().Msgf("read config: %+v", cfg)
 	return cfg
 }
