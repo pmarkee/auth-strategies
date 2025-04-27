@@ -23,6 +23,7 @@ type DbConfig struct {
 	Name     string `yaml:"name"`
 }
 
+// ParseConfig read config.yaml from the working directory and parse it into structs
 func ParseConfig() Config {
 	cfgBytes, err := os.ReadFile("config.yaml")
 	if err != nil {

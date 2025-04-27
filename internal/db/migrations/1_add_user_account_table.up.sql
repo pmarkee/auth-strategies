@@ -1,0 +1,17 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "moddatetime";
+
+CREATE TABLE IF NOT EXISTS user_account (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ DEFAULT NULL
+);
+
+CREATE TRIGGER user_account_ts
+    BEFORE UPDATE ON user_account
+    FOR EACH ROW
+    EXECUTE PROCEDURE moddatetime (updated_at);

@@ -38,6 +38,16 @@ func main() {
 	}
 	log.Info().Msg("database connection established")
 
+	applied, err := db.ApplyMigrations(&cfg.Db)
+	if err != nil {
+		log.Error().Err(err).Msg("applying database migrations failed")
+		return
+	} else if !applied {
+		log.Info().Msg("database already up-to-date, no migrations applied")
+	} else {
+		log.Info().Msg("migrations applied")
+	}
+
 	r := SetupRouter()
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
