@@ -1,0 +1,61 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  user.GetUserInfoResponse:
+    properties:
+      firstName:
+        example: John
+        type: string
+      lastName:
+        example: Doe
+        type: string
+    required:
+    - firstName
+    - lastName
+    type: object
+  utils.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Peter Marki
+    url: https://github.com/pmarkee
+  description: These are the API docs for my showcase of auth strategies in Go.
+  title: Auth Strategies Showcase
+  version: "1"
+paths:
+  /user:
+    get:
+      parameters:
+      - description: id of the user
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: fetch a user's first and last name based on their id
+      tags:
+      - user
+produces:
+- application/json
+swagger: "2.0"

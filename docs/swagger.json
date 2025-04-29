@@ -1,0 +1,92 @@
+{
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "These are the API docs for my showcase of auth strategies in Go.",
+        "title": "Auth Strategies Showcase",
+        "contact": {
+            "name": "Peter Marki",
+            "url": "https://github.com/pmarkee"
+        },
+        "version": "1"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/user": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "fetch a user's first and last name based on their id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id of the user",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetUserInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "user.GetUserInfoResponse": {
+            "type": "object",
+            "required": [
+                "firstName",
+                "lastName"
+            ],
+            "properties": {
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                }
+            }
+        },
+        "utils.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,32 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "./queries"
+    schema: "./migrations"
+    gen:
+      go:
+        package: "repository"
+        out: "repository"
+        sql_package: "pgx/v5"
+        emit_pointers_for_null_types: true
+        emit_prepared_queries: true
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "text"
+            go_type:
+              type: "string"
+          - db_type: "text"
+            nullable: true
+            go_type:
+              type: "string"
+          - db_type: "timestamptz"
+            go_type:
+              type: "time.Time"
+          - db_type: "timestamptz"
+            nullable: true
+            go_type:
+              type: "time.Time"
+              pointer: true
