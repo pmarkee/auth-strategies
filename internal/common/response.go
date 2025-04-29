@@ -1,4 +1,4 @@
-package utils
+package common
 
 import (
 	"encoding/json"
@@ -17,7 +17,12 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 	}
 }
 
+// SuccessResponse generic HTTP response returned in a happy-case, contains a status message
+type SuccessResponse struct {
+	Status string `json:"status" example:"success"`
+}
+
 // ErrorResponse generic HTTP response returned in an error-case, contains an error message
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error string `json:"error" example:"error""`
 }

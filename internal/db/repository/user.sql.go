@@ -11,6 +11,54 @@ import (
 	"github.com/google/uuid"
 )
 
+const createPasswordAuth = `-- name: CreatePasswordAuth :exec
+INSERT INTO password_auth (user_id, pw_hash, pw_salt) VALUES ($1, $2, $3)
+`
+
+type CreatePasswordAuthParams struct {
+	UserID uuid.UUID
+	PwHash []byte
+	PwSalt []byte
+}
+
+func (q *Queries) CreatePasswordAuth(ctx context.Context, arg CreatePasswordAuthParams) error {
+	_, err := q.db.Exec(ctx, createPasswordAuth, arg.UserID, arg.PwHash, arg.PwSalt)
+	return err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO user_account (email, first_name, last_name) VALUES ($1, $2, $3) RETURNING id
+`
+
+type CreateUserParams struct {
+	Email     string
+	FirstName string
+	LastName  string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.FirstName, arg.LastName)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const emailTaken = `-- name: EmailTaken :one
+SELECT
+    CASE WHEN EXISTS (
+        SELECT 1
+        FROM user_account
+        WHERE email = $1
+    ) THEN true ELSE false END
+`
+
+func (q *Queries) EmailTaken(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, emailTaken, email)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const getPasswordAuth = `-- name: GetPasswordAuth :one
 SELECT ua.id, pa.pw_hash, pa.pw_salt
 FROM user_account ua

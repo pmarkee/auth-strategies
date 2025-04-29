@@ -1,10 +1,11 @@
 package user
 
 import (
-	"auth-strategies/internal/utils"
+	"auth-strategies/internal/common"
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -22,32 +23,26 @@ type GetUserInfoResponse struct {
 	LastName  string `json:"lastName" validate:"required" example:"Doe"`
 }
 
-// GetUserInfo fetch a user's first and last name based on their id
+// GetUserInfo fetch the authenticated user's first and last name
 //
-//	@Summary	fetch a user's first and last name based on their id
+//	@Summary	fetch the authenticated user's first and last name
 //	@Tags		user
-//	@Param		id	query	string	true	"id of the user"
 //	@Produce	json
 //	@Success	200	{object}	GetUserInfoResponse
-//	@Failure	400	{object}	utils.ErrorResponse
-//	@Failure	401	{object}	utils.ErrorResponse
+//	@Failure	400	{object}	common.ErrorResponse
+//	@Failure	401	{object}	common.ErrorResponse
 //	@Failure	500
 //	@Router		/user [get]
+//	@Security	BasicAuth
 func (api *Api) GetUserInfo(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
-	if idStr == "" {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.ErrorResponse{Error: "missing id"})
-		return
-	}
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, utils.ErrorResponse{Error: "invalid id"})
+	id := getUserIdFromContext(w, r)
+	if id == nil {
 		return
 	}
 
 	userData, err := api.s.getUserData(r.Context(), id)
 	if errors.Is(err, sql.ErrNoRows) {
-		utils.WriteJSON(w, http.StatusNotFound, utils.ErrorResponse{Error: "user not found"})
+		common.WriteJSON(w, http.StatusNotFound, common.ErrorResponse{Error: "user not found"})
 		return
 	}
 	if err != nil {
@@ -55,5 +50,16 @@ func (api *Api) GetUserInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, GetUserInfoResponse{userData.FirstName, userData.LastName})
+	common.WriteJSON(w, http.StatusOK, GetUserInfoResponse{userData.FirstName, userData.LastName})
+}
+
+func getUserIdFromContext(w http.ResponseWriter, r *http.Request) *uuid.UUID {
+	id, ok := r.Context().Value("id").(*uuid.UUID)
+	if !ok {
+		// Should not be reached
+		log.Error().Msg("failed to read user id from context")
+		w.WriteHeader(http.StatusUnauthorized)
+		return nil
+	}
+	return id
 }

@@ -20,9 +20,9 @@ type userDataRs struct {
 	LastName  string
 }
 
-func (s *Service) getUserData(ctx context.Context, id uuid.UUID) (*userDataRs, error) {
+func (s *Service) getUserData(ctx context.Context, id *uuid.UUID) (*userDataRs, error) {
 	repo := repository.New(s.pool)
-	info, err := repo.GetUserInfo(ctx, id)
+	info, err := repo.GetUserInfo(ctx, *id)
 	if err != nil {
 		return nil, err
 	}

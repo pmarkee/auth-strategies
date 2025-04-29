@@ -2,6 +2,38 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  auth.RegisterData:
+    properties:
+      email:
+        example: johndoe@example.com
+        type: string
+      firstName:
+        example: John
+        type: string
+      lastName:
+        example: Doe
+        type: string
+      password:
+        example: foobar
+        type: string
+    required:
+    - email
+    - firstName
+    - lastName
+    - password
+    type: object
+  common.ErrorResponse:
+    properties:
+      error:
+        example: error
+        type: string
+    type: object
+  common.SuccessResponse:
+    properties:
+      status:
+        example: success
+        type: string
+    type: object
   user.GetUserInfoResponse:
     properties:
       firstName:
@@ -14,28 +46,42 @@ definitions:
     - firstName
     - lastName
     type: object
-  utils.ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact:
     name: Peter Marki
     url: https://github.com/pmarkee
-  description: These are the API docs for my showcase of auth strategies in Go.
+  description: API key passed in header X-API-KEY
   title: Auth Strategies Showcase
   version: "1"
 paths:
+  /auth/register:
+    post:
+      parameters:
+      - description: email, full name and password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SuccessResponse'
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      summary: register via email and password
+      tags:
+      - auth
   /user:
     get:
-      parameters:
-      - description: id of the user
-        in: query
-        name: id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -46,16 +92,21 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/utils.ErrorResponse'
+            $ref: '#/definitions/common.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/utils.ErrorResponse'
+            $ref: '#/definitions/common.ErrorResponse'
         "500":
           description: Internal Server Error
-      summary: fetch a user's first and last name based on their id
+      security:
+      - BasicAuth: []
+      summary: fetch the authenticated user's first and last name
       tags:
       - user
 produces:
 - application/json
+securityDefinitions:
+  BasicAuth:
+    type: basic
 swagger: "2.0"

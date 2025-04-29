@@ -31,6 +31,8 @@ func SetupRouter(pool *pgxpool.Pool) *chi.Mux {
 
 	authRouter := chi.NewRouter()
 	authService := auth.NewService(pool)
+	authApi := auth.NewApi(authService)
+	authRouter.Post("/register", authApi.Register)
 	r.Mount("/auth", authRouter)
 
 	userRouter := chi.NewRouter()
@@ -50,6 +52,11 @@ func SetupRouter(pool *pgxpool.Pool) *chi.Mux {
 // @BasePath		/
 // @accept			json
 // @produce		json
+
+// @securityDefinitions.basic	BasicAuth
+// @in							header
+// @name						X-API-KEY
+// @description				API key passed in header X-API-KEY
 func main() {
 	config.SetupLogger("debug")
 

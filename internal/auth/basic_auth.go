@@ -25,16 +25,15 @@ func (s *Service) BasicAuth(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		// TODO call service, handle error and all cases, call next
 
-		id, err := s.CheckPassword(r.Context(), payload.Email, payload.Password)
-		if errors.Is(err, InvalidCredentials) {
+		id, err := s.checkPassword(r.Context(), payload.Email, payload.Password)
+		if errors.Is(err, errInvalidCredentials) {
 			w.Header().Set("WWW-Authenticate", `Basic realm="user"`)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
-		} else {
+		} else if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Error().Err(err).Msg("basic auth failed")
+			log.Error().Err(err).Msgf("basic auth failed: %s", err)
 			return
 		}
 
