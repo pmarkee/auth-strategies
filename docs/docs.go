@@ -24,6 +24,48 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "login via email and password",
+                "parameters": [
+                    {
+                        "description": "email and password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SuccessResponse"
+                        },
+                        "headers": {
+                            "Set-Cookie": {
+                                "type": "string",
+                                "description": "Session cookie"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "produces": [
@@ -63,7 +105,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user": {
+        "/user/basic": {
             "get": {
                 "security": [
                     {
@@ -101,9 +143,65 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/session": {
+            "get": {
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "fetch the authenticated user's first and last name",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetUserInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "auth.LoginData": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "johndoe@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "foobar"
+                }
+            }
+        },
         "auth.RegisterData": {
             "type": "object",
             "required": [
@@ -170,6 +268,12 @@ const docTemplate = `{
     "securityDefinitions": {
         "BasicAuth": {
             "type": "basic"
+        },
+        "session": {
+            "description": "session cookie",
+            "type": "apiKey",
+            "name": "session",
+            "in": "cookie"
         }
     }
 }`

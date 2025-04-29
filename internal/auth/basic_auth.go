@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func (s *Service) BasicAuth(next http.Handler) http.Handler {
+func (api *Api) BasicAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
@@ -26,7 +26,7 @@ func (s *Service) BasicAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		id, err := s.checkPassword(r.Context(), payload.Email, payload.Password)
+		id, err := api.s.checkPassword(r.Context(), payload.Email, payload.Password)
 		if errors.Is(err, errInvalidCredentials) {
 			w.Header().Set("WWW-Authenticate", `Basic realm="user"`)
 			w.WriteHeader(http.StatusUnauthorized)

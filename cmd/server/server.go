@@ -7,6 +7,7 @@ import (
 	"auth-strategies/internal/user"
 	"context"
 	"fmt"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,7 +20,7 @@ import (
 	_ "auth-strategies/docs"
 )
 
-func SetupRouter(pool *pgxpool.Pool) *chi.Mux {
+func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	sc := slogchi.Config{
@@ -31,32 +32,39 @@ func SetupRouter(pool *pgxpool.Pool) *chi.Mux {
 
 	authRouter := chi.NewRouter()
 	authService := auth.NewService(pool)
-	authApi := auth.NewApi(authService)
+	authApi := auth.NewApi(authService, sessionStore)
 	authRouter.Post("/register", authApi.Register)
+	authRouter.Post("/login", authApi.Login)
 	r.Mount("/auth", authRouter)
 
 	userRouter := chi.NewRouter()
 	userApi := user.NewApi(user.NewService(pool))
-	userRouter.With(authService.BasicAuth).Get("/", userApi.GetUserInfo)
+	userRouter.With(authApi.BasicAuth).Get("/basic", userApi.GetUserInfoBasic)
+	userRouter.With(authApi.SessionAuth).Get("/session", userApi.GetUserInfoSession)
 	r.Mount("/user", userRouter)
 
 	return r
 }
 
-// @title			Auth Strategies Showcase
-// @version		1
-// @description	These are the API docs for my showcase of auth strategies in Go.
-// @contact.name	Peter Marki
-// @contact.url	https://github.com/pmarkee
-// @host			localhost:8080
-// @BasePath		/
-// @accept			json
-// @produce		json
-
+// @title						Auth Strategies Showcase
+// @version					1
+// @description				These are the API docs for my showcase of auth strategies in Go.
+// @contact.name				Peter Marki
+// @contact.url				https://github.com/pmarkee
+// @host						localhost:8080
+// @BasePath					/
+// @accept						json
+// @produce					json
+//
 // @securityDefinitions.basic	BasicAuth
 // @in							header
 // @name						X-API-KEY
 // @description				API key passed in header X-API-KEY
+//
+// @securityDefinitions.apiKey	session
+// @in							cookie
+// @name						session
+// @description				session cookie
 func main() {
 	config.SetupLogger("debug")
 
@@ -79,8 +87,10 @@ func main() {
 		log.Info().Msg("migrations applied")
 	}
 
-	r := SetupRouter(pool)
+	sessionStore := config.InitSessionStore(pool)
+
+	r := SetupRouter(pool, sessionStore)
 	r.Get("/docs/*", httpSwagger.Handler())
 
-	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), r)
+	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), sessionStore.LoadAndSave(r))
 }

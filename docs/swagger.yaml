@@ -2,6 +2,18 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  auth.LoginData:
+    properties:
+      email:
+        example: johndoe@example.com
+        type: string
+      password:
+        example: foobar
+        type: string
+    required:
+    - email
+    - password
+    type: object
   auth.RegisterData:
     properties:
       email:
@@ -55,6 +67,33 @@ info:
   title: Auth Strategies Showcase
   version: "1"
 paths:
+  /auth/login:
+    post:
+      parameters:
+      - description: email and password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              type: string
+          schema:
+            $ref: '#/definitions/common.SuccessResponse'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: login via email and password
+      tags:
+      - auth
   /auth/register:
     post:
       parameters:
@@ -80,7 +119,7 @@ paths:
       summary: register via email and password
       tags:
       - auth
-  /user:
+  /user/basic:
     get:
       produces:
       - application/json
@@ -104,9 +143,38 @@ paths:
       summary: fetch the authenticated user's first and last name
       tags:
       - user
+  /user/session:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - session: []
+      summary: fetch the authenticated user's first and last name
+      tags:
+      - user
 produces:
 - application/json
 securityDefinitions:
   BasicAuth:
     type: basic
+  session:
+    description: session cookie
+    in: cookie
+    name: session
+    type: apiKey
 swagger: "2.0"

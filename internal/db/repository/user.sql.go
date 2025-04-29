@@ -79,7 +79,7 @@ func (q *Queries) GetPasswordAuth(ctx context.Context, email string) (GetPasswor
 	return i, err
 }
 
-const getUserInfo = `-- name: GetUserInfo :one
+const getUserInfo = `-- name: GetUserInfoBasic :one
 SELECT first_name, last_name FROM user_account WHERE id=$1
 `
 

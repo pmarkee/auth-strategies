@@ -17,6 +17,12 @@ type PasswordAuth struct {
 	PwSalt []byte
 }
 
+type Session struct {
+	Token  string
+	Data   []byte
+	Expiry time.Time
+}
+
 type UserAccount struct {
 	ID        uuid.UUID
 	Email     string

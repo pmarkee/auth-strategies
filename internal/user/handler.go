@@ -23,18 +23,37 @@ type GetUserInfoResponse struct {
 	LastName  string `json:"lastName" validate:"required" example:"Doe"`
 }
 
-// GetUserInfo fetch the authenticated user's first and last name
+// GetUserInfoBasic fetch the authenticated user's first and last name - basic auth
 //
-//	@Summary	fetch the authenticated user's first and last name
+//	@Summary	fetch the authenticated user's first and last name - basic auth
 //	@Tags		user
 //	@Produce	json
 //	@Success	200	{object}	GetUserInfoResponse
 //	@Failure	400	{object}	common.ErrorResponse
 //	@Failure	401	{object}	common.ErrorResponse
 //	@Failure	500
-//	@Router		/user [get]
+//	@Router		/user/basic [get]
 //	@Security	BasicAuth
-func (api *Api) GetUserInfo(w http.ResponseWriter, r *http.Request) {
+func (api *Api) GetUserInfoBasic(w http.ResponseWriter, r *http.Request) {
+	api.getUserInfo(w, r)
+}
+
+// GetUserInfoSession fetch the authenticated user's first and last name - session auth
+//
+//	@Summary	fetch the authenticated user's first and last name - session auth
+//	@Tags		user
+//	@Produce	json
+//	@Success	200	{object}	GetUserInfoResponse
+//	@Failure	400	{object}	common.ErrorResponse
+//	@Failure	401	{object}	common.ErrorResponse
+//	@Failure	500
+//	@Router		/user/session [get]
+//	@Security	session
+func (api *Api) GetUserInfoSession(w http.ResponseWriter, r *http.Request) {
+	api.getUserInfo(w, r)
+}
+
+func (api *Api) getUserInfo(w http.ResponseWriter, r *http.Request) {
 	id := getUserIdFromContext(w, r)
 	if id == nil {
 		return
