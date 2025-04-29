@@ -10,6 +10,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type PasswordAuth struct {
+	ID     int32
+	UserID uuid.UUID
+	PwHash []byte
+	PwSalt []byte
+}
+
 type UserAccount struct {
 	ID        uuid.UUID
 	Email     string

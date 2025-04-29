@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auth-strategies/internal/auth"
 	"auth-strategies/internal/config"
 	"auth-strategies/internal/db"
 	"auth-strategies/internal/user"
@@ -28,9 +29,13 @@ func SetupRouter(pool *pgxpool.Pool) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/health"))
 
+	authRouter := chi.NewRouter()
+	authService := auth.NewService(pool)
+	r.Mount("/auth", authRouter)
+
 	userRouter := chi.NewRouter()
 	userApi := user.NewApi(user.NewService(pool))
-	userRouter.Get("/", userApi.GetUserInfo)
+	userRouter.With(authService.BasicAuth).Get("/", userApi.GetUserInfo)
 	r.Mount("/user", userRouter)
 
 	return r

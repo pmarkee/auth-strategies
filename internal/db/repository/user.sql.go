@@ -11,6 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const getPasswordAuth = `-- name: GetPasswordAuth :one
+SELECT ua.id, pa.pw_hash, pa.pw_salt
+FROM user_account ua
+JOIN password_auth pa ON pa.user_id = ua.id
+WHERE ua.email=$1
+`
+
+type GetPasswordAuthRow struct {
+	ID     uuid.UUID
+	PwHash []byte
+	PwSalt []byte
+}
+
+func (q *Queries) GetPasswordAuth(ctx context.Context, email string) (GetPasswordAuthRow, error) {
+	row := q.db.QueryRow(ctx, getPasswordAuth, email)
+	var i GetPasswordAuthRow
+	err := row.Scan(&i.ID, &i.PwHash, &i.PwSalt)
+	return i, err
+}
+
 const getUserInfo = `-- name: GetUserInfo :one
 SELECT first_name, last_name FROM user_account WHERE id=$1
 `
