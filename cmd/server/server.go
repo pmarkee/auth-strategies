@@ -35,6 +35,7 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux 
 	authApi := auth.NewApi(authService, sessionStore)
 	authRouter.Post("/register", authApi.Register)
 	authRouter.Post("/login", authApi.Login)
+	authRouter.Post("/logout", authApi.Logout)
 	r.Mount("/auth", authRouter)
 
 	userRouter := chi.NewRouter()

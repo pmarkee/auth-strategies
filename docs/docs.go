@@ -66,6 +66,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "log the user out of the current session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "produces": [
@@ -118,7 +140,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "fetch the authenticated user's first and last name",
+                "summary": "fetch the authenticated user's first and last name - basic auth",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -157,7 +179,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "fetch the authenticated user's first and last name",
+                "summary": "fetch the authenticated user's first and last name - session auth",
                 "responses": {
                     "200": {
                         "description": "OK",

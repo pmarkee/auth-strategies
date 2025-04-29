@@ -94,6 +94,20 @@ paths:
       summary: login via email and password
       tags:
       - auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SuccessResponse'
+        "500":
+          description: Internal Server Error
+      summary: log the user out of the current session
+      tags:
+      - auth
   /auth/register:
     post:
       parameters:
@@ -140,7 +154,7 @@ paths:
           description: Internal Server Error
       security:
       - BasicAuth: []
-      summary: fetch the authenticated user's first and last name
+      summary: fetch the authenticated user's first and last name - basic auth
       tags:
       - user
   /user/session:
@@ -164,7 +178,7 @@ paths:
           description: Internal Server Error
       security:
       - session: []
-      summary: fetch the authenticated user's first and last name
+      summary: fetch the authenticated user's first and last name - session auth
       tags:
       - user
 produces:
