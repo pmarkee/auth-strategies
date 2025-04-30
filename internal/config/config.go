@@ -1,8 +1,10 @@
 package config
 
 import (
+	"auth-strategies/configs"
 	"github.com/goccy/go-yaml"
 	"github.com/rs/zerolog/log"
+	"io"
 	"os"
 )
 
@@ -24,9 +26,24 @@ type DbConfig struct {
 	Name     string `yaml:"name"`
 }
 
-// ParseConfig read config.yaml from the working directory and parse it into structs
 func ParseConfig() Config {
-	cfgBytes, err := os.ReadFile("config.yaml")
+	cfg := parseConfigYAML()
+	dbHostFromEnv := os.Getenv("POSTGRES_HOST")
+	if dbHostFromEnv != "" {
+		cfg.Db.Host = dbHostFromEnv
+	}
+	return cfg
+}
+
+// ParseConfig read config.yaml from the working directory and parse it into structs
+func parseConfigYAML() Config {
+	configFile, err := configs.ConfigYAML.Open("config.yaml")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to open embed fs of config.yaml")
+	}
+	defer configFile.Close()
+
+	cfgBytes, err := io.ReadAll(configFile)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to read config.yaml")
 	}

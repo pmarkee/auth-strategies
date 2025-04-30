@@ -9,6 +9,26 @@ services:
       POSTGRES_DB: auth-strategies
     volumes:
       - db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready
+      interval: 10m
+      timeout: 3s
+      start_period: 10s
+      start_interval: 5s
+      retries: 3
+
+  server:
+    depends_on:
+      database:
+        condition: service_healthy
+    container_name: server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_HOST: database
 
 volumes:
   db-volume:

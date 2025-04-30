@@ -105,7 +105,7 @@ func main() {
 	sessionStore := config.InitSessionStore(pool)
 
 	r := SetupRouter(pool, sessionStore, []byte(cfg.Server.HmacSecret))
-	r.Get("/docs/*", httpSwagger.Handler())
+	r.Get("/*", httpSwagger.Handler())
 
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), sessionStore.LoadAndSave(r))
 }
