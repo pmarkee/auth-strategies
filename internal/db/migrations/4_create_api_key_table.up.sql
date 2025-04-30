@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS api_key (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES user_account(id) NOT NULL,
+    public_id TEXT NOT NULL UNIQUE,
+    secret_hash BYTEA NOT NULL,
+    secret_salt BYTEA NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

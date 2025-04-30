@@ -43,8 +43,15 @@ type LoginData struct {
 	Password string `json:"password" validate:"required" example:"foobar"`
 }
 
-type AccessToken struct {
-	AccessToken string `json:"accessToken"`
+// AccessTokenResponse response containing the generated JWT access token
+type AccessTokenResponse struct {
+	AccessToken string `json:"accessToken" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsImV4cCI6MTc0NjAyMTY0NSwic3ViIjoiMDllMjNjNDAtM2JjMC00OTI0LWIxMDAtMmI3YjMyZDMxMGZlIn0.2ZSXXjxsLqeQOaovDU4tuj-8-6Hd7pUBxLpchURpWDU"`
+}
+
+// ApiKeyResponse response containing the generated API key
+type ApiKeyResponse struct {
+	// ApiKey is a string formatted as "xxx.yyy" where "xxx" is a public id, and "yyy" is a secret that is only stored encrypted on the server
+	ApiKey string `json:"apiKey" validate:"required" example:"fa40d13983db9cf8a19477d42f652726.37c476287cb99a1e6b1ad69006ad8c48d7c494368a21e16e5dbd2d29235de87b"`
 }
 
 // Register register via email and password
@@ -127,7 +134,7 @@ func (api *Api) Logout(w http.ResponseWriter, r *http.Request) {
 //	@Param		request	body	LoginData	true	"email and password"
 //	@Tags		auth
 //	@Produce	json
-//	@Success	200	{object}	AccessToken
+//	@Success	200	{object}	AccessTokenResponse
 //	@Failure	401
 //	@Failure	500
 //	@Router		/auth/token/login	[post]
@@ -149,7 +156,7 @@ func (api *Api) LoginToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	common.WriteJSON(w, http.StatusOK, AccessToken{AccessToken: tokenString})
+	common.WriteJSON(w, http.StatusOK, AccessTokenResponse{AccessToken: tokenString})
 }
 
 func (api *Api) loginHelper(w http.ResponseWriter, r *http.Request) *uuid.UUID {
@@ -170,4 +177,31 @@ func (api *Api) loginHelper(w http.ResponseWriter, r *http.Request) *uuid.UUID {
 	}
 
 	return id
+}
+
+// GenerateApiKey generate an API key for the authenticated user
+//
+//	@Summary		generate an API key for the authenticated user
+//	@Description	generate an API key for the authenticated user (WARNING: the key will only be returned once and cannot be retrieved later!)
+//	@Tags			auth
+//	@Produce		json
+//	@Success		200	{object}	ApiKeyResponse
+//	@Failure		401
+//	@Failure		500
+//	@Router			/auth/api-key [get]
+//	@Security		session
+func (api *Api) GenerateApiKey(w http.ResponseWriter, r *http.Request) {
+	id := common.GetUserIdFromContext(w, r)
+	if id == nil {
+		return
+	}
+
+	key, err := api.s.generateApiKey(r.Context(), id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error().Err(err).Msg("failed to generate api key")
+		return
+	}
+
+	common.WriteJSON(w, http.StatusOK, ApiKeyResponse{ApiKey: key})
 }

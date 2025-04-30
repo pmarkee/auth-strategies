@@ -24,6 +24,37 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/api-key": {
+            "get": {
+                "security": [
+                    {
+                        "session": []
+                    }
+                ],
+                "description": "generate an API key for the authenticated user (WARNING: the key will only be returned once and cannot be retrieved later!)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "generate an API key for the authenticated user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ApiKeyResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "produces": [
@@ -151,11 +182,50 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/auth.AccessToken"
+                            "$ref": "#/definitions/auth.AccessTokenResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/user/api-key": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "fetch the authenticated user's first and last name - api key auth",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetUserInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/common.ErrorResponse"
+                        }
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -282,11 +352,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.AccessToken": {
+        "auth.AccessTokenResponse": {
             "type": "object",
+            "required": [
+                "accessToken"
+            ],
             "properties": {
                 "accessToken": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsImV4cCI6MTc0NjAyMTY0NSwic3ViIjoiMDllMjNjNDAtM2JjMC00OTI0LWIxMDAtMmI3YjMyZDMxMGZlIn0.2ZSXXjxsLqeQOaovDU4tuj-8-6Hd7pUBxLpchURpWDU"
+                }
+            }
+        },
+        "auth.ApiKeyResponse": {
+            "type": "object",
+            "required": [
+                "apiKey"
+            ],
+            "properties": {
+                "apiKey": {
+                    "description": "ApiKey is a string formatted as \"xxx.yyy\" where \"xxx\" is a public id, and \"yyy\" is a secret that is only stored encrypted on the server",
+                    "type": "string",
+                    "example": "fa40d13983db9cf8a19477d42f652726.37c476287cb99a1e6b1ad69006ad8c48d7c494368a21e16e5dbd2d29235de87b"
                 }
             }
         },
@@ -371,6 +458,12 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
+        "ApiKey": {
+            "description": "API key passed in the X-API-Key header",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
+        },
         "BasicAuth": {
             "type": "basic"
         },

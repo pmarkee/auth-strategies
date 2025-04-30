@@ -20,3 +20,18 @@ INSERT INTO user_account (email, first_name, last_name) VALUES ($1, $2, $3) RETU
 
 -- name: CreatePasswordAuth :exec
 INSERT INTO password_auth (user_id, pw_hash, pw_salt) VALUES ($1, $2, $3);
+
+-- name: ApiKeyPublicIdTaken :one
+SELECT
+    CASE WHEN EXISTS (
+        SELECT 1 FROM api_key WHERE public_id=$1
+    ) THEN true ELSE false END;
+
+-- name: CreateApiKey :exec
+INSERT INTO api_key (user_id, public_id, secret_hash, secret_salt)
+VALUES ($1, $2, $3, $4);
+
+-- name: FindApiKey :one
+SELECT user_id, public_id, secret_hash, secret_salt
+FROM api_key
+WHERE public_id=$1;

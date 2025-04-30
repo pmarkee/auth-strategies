@@ -10,6 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type ApiKey struct {
+	ID         int32
+	UserID     uuid.UUID
+	PublicID   string
+	SecretHash []byte
+	SecretSalt []byte
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
 type PasswordAuth struct {
 	ID     int32
 	UserID uuid.UUID

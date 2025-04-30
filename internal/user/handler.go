@@ -4,8 +4,6 @@ import (
 	"auth-strategies/internal/common"
 	"database/sql"
 	"errors"
-	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -68,8 +66,23 @@ func (api *Api) GetUserInfoToken(w http.ResponseWriter, r *http.Request) {
 	api.getUserInfo(w, r)
 }
 
+// GetUserInfoApiKey fetch the authenticated user's first and last name - api key auth
+//
+//	@Summary	fetch the authenticated user's first and last name - api key auth
+//	@Tags		user
+//	@Produce	json
+//	@Success	200	{object}	GetUserInfoResponse
+//	@Failure	400	{object}	common.ErrorResponse
+//	@Failure	401	{object}	common.ErrorResponse
+//	@Failure	500
+//	@Router		/user/api-key [get]
+//	@Security	ApiKey
+func (api *Api) GetUserInfoApiKey(w http.ResponseWriter, r *http.Request) {
+	api.getUserInfo(w, r)
+}
+
 func (api *Api) getUserInfo(w http.ResponseWriter, r *http.Request) {
-	id := getUserIdFromContext(w, r)
+	id := common.GetUserIdFromContext(w, r)
 	if id == nil {
 		return
 	}
@@ -85,15 +98,4 @@ func (api *Api) getUserInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.WriteJSON(w, http.StatusOK, GetUserInfoResponse{userData.FirstName, userData.LastName})
-}
-
-func getUserIdFromContext(w http.ResponseWriter, r *http.Request) *uuid.UUID {
-	id, ok := r.Context().Value("id").(*uuid.UUID)
-	if !ok {
-		// Should not be reached
-		log.Error().Msg("failed to read user id from context")
-		w.WriteHeader(http.StatusUnauthorized)
-		return nil
-	}
-	return id
 }

@@ -4,7 +4,9 @@ import (
 	"auth-strategies/internal/db/repository"
 	"bytes"
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -103,4 +105,101 @@ func (s *Service) register(ctx context.Context, rq *registerRq) error {
 	}
 
 	return nil
+}
+
+func (s *Service) generateApiKey(ctx context.Context, userId *uuid.UUID) (string, error) {
+	repo := repository.New(s.pool)
+
+	key, err := _generateApiKey(ctx, repo.ApiKeyPublicIdTaken)
+	if err != nil {
+		return "", err
+	}
+
+	secretSalt, err := generateSalt()
+	if err != nil {
+		return "", err
+	}
+
+	secretHash := computeHash(key.secret, secretSalt)
+	params := repository.CreateApiKeyParams{
+		UserID:     *userId,
+		PublicID:   key.publicId,
+		SecretHash: secretHash,
+		SecretSalt: secretSalt,
+	}
+	if err := repo.CreateApiKey(ctx, params); err != nil {
+		return "", fmt.Errorf("failed to create api key: %w", err)
+	}
+
+	return fmt.Sprintf("%s.%s", key.publicId, key.secret), nil
+}
+
+type publicIdTakenFunc func(context.Context, string) (bool, error)
+
+type apiKey struct {
+	publicId string
+	secret   string
+}
+
+func _generateApiKey(ctx context.Context, checkTaken publicIdTakenFunc) (*apiKey, error) {
+	publicId, err := generateApiKeyPublicId(ctx, checkTaken, 16, 10)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := generateRandomHex(32)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiKey{publicId, secret}, nil
+}
+
+func generateApiKeyPublicId(ctx context.Context, checkTaken publicIdTakenFunc, length int, retries int) (string, error) {
+	for range retries {
+		id, err := generateRandomHex(length)
+		if err != nil {
+			return "", err
+		}
+
+		taken, err := checkTaken(ctx, id)
+		if err != nil {
+			return "", err
+		}
+		if !taken {
+			return id, nil
+		}
+	}
+
+	return "", fmt.Errorf("no unused api key public id of length %d found in %d retries", length, retries)
+}
+
+func generateRandomHex(length int) (string, error) {
+	var b = make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	s := hex.EncodeToString(b)
+	return s, nil
+}
+
+var (
+	errApiKeyInvalid = errors.New("invalid api key")
+)
+
+func (s *Service) validateApiKey(ctx context.Context, inputApiKey *apiKey) (*uuid.UUID, error) {
+	repo := repository.New(s.pool)
+	dbApiKey, err := repo.FindApiKey(ctx, inputApiKey.publicId)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("%w: admin api key not found", errApiKeyInvalid)
+	} else if err != nil {
+		return nil, fmt.Errorf("error fetching admin api key: %w", err)
+	}
+
+	inputHash := computeHash(inputApiKey.secret, dbApiKey.SecretSalt)
+	if !bytes.Equal(dbApiKey.SecretHash, inputHash) {
+		return nil, fmt.Errorf("%w: admin api key secret invalid", errApiKeyInvalid)
+	}
+
+	return &dbApiKey.UserID, nil
 }

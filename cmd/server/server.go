@@ -37,6 +37,7 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager, hmacSecre
 	authRouter.Post("/login", authApi.Login)
 	authRouter.Post("/token/login", authApi.LoginToken)
 	authRouter.Post("/logout", authApi.Logout)
+	authRouter.With(authApi.SessionAuth).Get("/api-key", authApi.GenerateApiKey)
 	r.Mount("/auth", authRouter)
 
 	userRouter := chi.NewRouter()
@@ -44,6 +45,7 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager, hmacSecre
 	userRouter.With(authApi.BasicAuth).Get("/basic", userApi.GetUserInfoBasic)
 	userRouter.With(authApi.SessionAuth).Get("/session", userApi.GetUserInfoSession)
 	userRouter.With(authApi.TokenAuth).Get("/token", userApi.GetUserInfoToken)
+	userRouter.With(authApi.ApiKeyAuth).Get("/api-key", userApi.GetUserInfoApiKey)
 	r.Mount("/user", userRouter)
 
 	return r
@@ -73,6 +75,11 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager, hmacSecre
 // @in							header
 // @name						Authorization
 // @description				Enter the token with the "Bearer " prefix
+//
+// @securityDefinitions.apiKey	ApiKey
+// @in							header
+// @name						X-API-Key
+// @description				API key passed in the X-API-Key header
 func main() {
 	config.SetupLogger("debug")
 
