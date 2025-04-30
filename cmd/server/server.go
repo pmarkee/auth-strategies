@@ -87,8 +87,7 @@ func main() {
 
 	pool, err := db.Connect(context.Background(), &cfg.Db)
 	if err != nil {
-		log.Error().Err(err).Msg("database connection failed")
-		return
+		log.Fatal().Err(err).Msg("database connection failed")
 	}
 	log.Info().Msg("database connection established")
 

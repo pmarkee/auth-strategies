@@ -46,23 +46,23 @@ type basicAuthPayload struct {
 	Password string
 }
 
-func parseBasicAuth(auth string) (basicAuthPayload, error) {
+func parseBasicAuth(auth string) (*basicAuthPayload, error) {
 	if !strings.HasPrefix(auth, "Basic ") {
-		return basicAuthPayload{}, fmt.Errorf("invalid authentication method")
+		return nil, fmt.Errorf("invalid authentication method")
 	}
 
 	enc := strings.TrimPrefix(auth, "Basic ")
 	dec, err := base64Decode(enc)
 	if err != nil {
-		return basicAuthPayload{}, err
+		return nil, err
 	}
 
 	s := strings.SplitN(dec, ":", 2)
 	if len(s) != 2 {
-		return basicAuthPayload{}, fmt.Errorf("invalid basic auth format")
+		return nil, fmt.Errorf("invalid basic auth format")
 	}
 
-	return basicAuthPayload{
+	return &basicAuthPayload{
 		Email:    s[0],
 		Password: s[1],
 	}, nil

@@ -16,7 +16,6 @@ const (
 	success         = "Success"
 	jsonParseFailed = "JSON parse failed"
 	emailTaken      = "Email address already taken"
-	logoutFailed    = "Logout failed"
 )
 
 type Api struct {
@@ -110,24 +109,6 @@ func (api *Api) Login(w http.ResponseWriter, r *http.Request) {
 	common.WriteJSON(w, http.StatusOK, common.SuccessResponse{Status: success})
 }
 
-// Logout log the user out of the current session
-//
-//	@Summary	log the user out of the current session
-//	@Tags		auth
-//	@Produce	json
-//	@Success	200	{object}	common.SuccessResponse
-//	@Failure	500
-//	@Router		/auth/logout	[post]
-func (api *Api) Logout(w http.ResponseWriter, r *http.Request) {
-	err := api.sessionStore.Destroy(r.Context())
-	if err != nil {
-		log.Error().Err(err).Msg("failed to destroy session")
-		common.WriteJSON(w, http.StatusInternalServerError, common.ErrorResponse{Error: logoutFailed})
-		return
-	}
-	common.WriteJSON(w, http.StatusOK, common.SuccessResponse{Status: success})
-}
-
 // LoginToken exchange email and password for an access and refresh token
 //
 //	@Summary	exchange email and password for an access and refresh token
@@ -177,6 +158,24 @@ func (api *Api) loginHelper(w http.ResponseWriter, r *http.Request) *uuid.UUID {
 	}
 
 	return id
+}
+
+// Logout log the user out of the current session
+//
+//	@Summary	log the user out of the current session
+//	@Tags		auth
+//	@Produce	json
+//	@Success	200	{object}	common.SuccessResponse
+//	@Failure	500
+//	@Router		/auth/logout	[post]
+func (api *Api) Logout(w http.ResponseWriter, r *http.Request) {
+	err := api.sessionStore.Destroy(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error().Err(err).Msg("failed to destroy session")
+		return
+	}
+	common.WriteJSON(w, http.StatusOK, common.SuccessResponse{Status: success})
 }
 
 // GenerateApiKey generate an API key for the authenticated user

@@ -19,7 +19,7 @@ func (api *Api) ApiKeyAuth(next http.Handler) http.Handler {
 
 		key, err := parseApiKey(rawKey)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
