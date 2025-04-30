@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/alexedwards/scs/v2"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -19,10 +22,11 @@ const (
 type Api struct {
 	s            *Service
 	sessionStore *scs.SessionManager
+	hmacSecret   []byte
 }
 
-func NewApi(s *Service, sessionStore *scs.SessionManager) *Api {
-	return &Api{s, sessionStore}
+func NewApi(s *Service, sessionStore *scs.SessionManager, hmacSecret []byte) *Api {
+	return &Api{s, sessionStore, hmacSecret}
 }
 
 // RegisterData payload for the register request
@@ -37,6 +41,10 @@ type RegisterData struct {
 type LoginData struct {
 	Email    string `json:"email" validate:"required" example:"johndoe@example.com"`
 	Password string `json:"password" validate:"required" example:"foobar"`
+}
+
+type AccessToken struct {
+	AccessToken string `json:"accessToken"`
 }
 
 // Register register via email and password
@@ -86,19 +94,8 @@ func (api *Api) Register(w http.ResponseWriter, r *http.Request) {
 //	@Header		200			{string}	Set-Cookie	"Session cookie"
 //	@Router		/auth/login	[post]
 func (api *Api) Login(w http.ResponseWriter, r *http.Request) {
-	loginData := &LoginData{}
-	if err := json.NewDecoder(r.Body).Decode(loginData); err != nil {
-		common.WriteJSON(w, http.StatusBadRequest, common.ErrorResponse{Error: jsonParseFailed})
-		return
-	}
-
-	id, err := api.s.checkPassword(r.Context(), loginData.Email, loginData.Password)
-	if errors.Is(err, errInvalidCredentials) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	} else if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msg("login failed")
+	id := api.loginHelper(w, r)
+	if id == nil {
 		return
 	}
 
@@ -122,4 +119,55 @@ func (api *Api) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	common.WriteJSON(w, http.StatusOK, common.SuccessResponse{Status: success})
+}
+
+// LoginToken exchange email and password for an access and refresh token
+//
+//	@Summary	exchange email and password for an access and refresh token
+//	@Param		request	body	LoginData	true	"email and password"
+//	@Tags		auth
+//	@Produce	json
+//	@Success	200	{object}	AccessToken
+//	@Failure	401
+//	@Failure	500
+//	@Router		/auth/token/login	[post]
+func (api *Api) LoginToken(w http.ResponseWriter, r *http.Request) {
+	id := api.loginHelper(w, r)
+	if id == nil {
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": id.String(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+		"alg": jwt.SigningMethodHS256.Alg(),
+	})
+	tokenString, err := token.SignedString(api.hmacSecret)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error().Err(err).Msg("failed to sign access token")
+		return
+	}
+
+	common.WriteJSON(w, http.StatusOK, AccessToken{AccessToken: tokenString})
+}
+
+func (api *Api) loginHelper(w http.ResponseWriter, r *http.Request) *uuid.UUID {
+	loginData := &LoginData{}
+	if err := json.NewDecoder(r.Body).Decode(loginData); err != nil {
+		common.WriteJSON(w, http.StatusBadRequest, common.ErrorResponse{Error: jsonParseFailed})
+		return nil
+	}
+
+	id, err := api.s.checkPassword(r.Context(), loginData.Email, loginData.Password)
+	if errors.Is(err, errInvalidCredentials) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return nil
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error().Err(err).Msg("login failed")
+		return nil
+	}
+
+	return id
 }

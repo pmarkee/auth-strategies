@@ -20,7 +20,7 @@ import (
 	_ "auth-strategies/docs"
 )
 
-func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux {
+func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager, hmacSecret []byte) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	sc := slogchi.Config{
@@ -32,9 +32,10 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux 
 
 	authRouter := chi.NewRouter()
 	authService := auth.NewService(pool)
-	authApi := auth.NewApi(authService, sessionStore)
+	authApi := auth.NewApi(authService, sessionStore, hmacSecret)
 	authRouter.Post("/register", authApi.Register)
 	authRouter.Post("/login", authApi.Login)
+	authRouter.Post("/token/login", authApi.LoginToken)
 	authRouter.Post("/logout", authApi.Logout)
 	r.Mount("/auth", authRouter)
 
@@ -42,6 +43,7 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux 
 	userApi := user.NewApi(user.NewService(pool))
 	userRouter.With(authApi.BasicAuth).Get("/basic", userApi.GetUserInfoBasic)
 	userRouter.With(authApi.SessionAuth).Get("/session", userApi.GetUserInfoSession)
+	userRouter.With(authApi.TokenAuth).Get("/token", userApi.GetUserInfoToken)
 	r.Mount("/user", userRouter)
 
 	return r
@@ -66,6 +68,11 @@ func SetupRouter(pool *pgxpool.Pool, sessionStore *scs.SessionManager) *chi.Mux 
 // @in							cookie
 // @name						session
 // @description				session cookie
+//
+// @securityDefinitions.apiKey	Bearer
+// @in							header
+// @name						Authorization
+// @description				Enter the token with the "Bearer " prefix
 func main() {
 	config.SetupLogger("debug")
 
@@ -90,7 +97,7 @@ func main() {
 
 	sessionStore := config.InitSessionStore(pool)
 
-	r := SetupRouter(pool, sessionStore)
+	r := SetupRouter(pool, sessionStore, []byte(cfg.Server.HmacSecret))
 	r.Get("/docs/*", httpSwagger.Handler())
 
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), sessionStore.LoadAndSave(r))

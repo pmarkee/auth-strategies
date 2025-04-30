@@ -1,5 +1,6 @@
 server:
   port: 8080
+  hmacSecret: c04875a3877373aac7feedd4fe9a378d79e893b8edc46d4ae6fb985c66d1a5b5
 db:
   host: localhost
   port: 5432

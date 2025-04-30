@@ -53,6 +53,21 @@ func (api *Api) GetUserInfoSession(w http.ResponseWriter, r *http.Request) {
 	api.getUserInfo(w, r)
 }
 
+// GetUserInfoToken fetch the authenticated user's first and last name - token auth
+//
+//	@Summary	fetch the authenticated user's first and last name - token auth
+//	@Tags		user
+//	@Produce	json
+//	@Success	200	{object}	GetUserInfoResponse
+//	@Failure	400	{object}	common.ErrorResponse
+//	@Failure	401	{object}	common.ErrorResponse
+//	@Failure	500
+//	@Router		/user/token [get]
+//	@Security	Bearer
+func (api *Api) GetUserInfoToken(w http.ResponseWriter, r *http.Request) {
+	api.getUserInfo(w, r)
+}
+
 func (api *Api) getUserInfo(w http.ResponseWriter, r *http.Request) {
 	id := getUserIdFromContext(w, r)
 	if id == nil {

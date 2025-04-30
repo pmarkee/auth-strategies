@@ -2,6 +2,11 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  auth.AccessToken:
+    properties:
+      accessToken:
+        type: string
+    type: object
   auth.LoginData:
     properties:
       email:
@@ -133,6 +138,29 @@ paths:
       summary: register via email and password
       tags:
       - auth
+  /auth/token/login:
+    post:
+      parameters:
+      - description: email and password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.AccessToken'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: exchange email and password for an access and refresh token
+      tags:
+      - auth
   /user/basic:
     get:
       produces:
@@ -181,11 +209,40 @@ paths:
       summary: fetch the authenticated user's first and last name - session auth
       tags:
       - user
+  /user/token:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/common.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: fetch the authenticated user's first and last name - token auth
+      tags:
+      - user
 produces:
 - application/json
 securityDefinitions:
   BasicAuth:
     type: basic
+  Bearer:
+    description: Enter the token with the "Bearer " prefix
+    in: header
+    name: Authorization
+    type: apiKey
   session:
     description: session cookie
     in: cookie
